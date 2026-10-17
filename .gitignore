@@ -1,0 +1,44 @@
+# Gradle / build
+.gradle/
+build/
+**/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+output-metadata.json
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Signing keys and secrets - never commit
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+secrets.properties
+
+# Course materials must stay on the phone - never commit them
+course-materials/
+materials/
+backups/
+*.mp3
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.wav
+*.mp4
+*.mkv
+*.3gp
+*.webm
+*.pdf
+*.zip
+*.epbackup
