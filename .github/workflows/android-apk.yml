@@ -87,10 +87,29 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run unit tests
-        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon testDebugUnitTest 2>&1 | tee gradle-test.log
 
       - name: Build debug APK
-        run: ./gradlew --no-daemon --stacktrace assembleDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon assembleDebug 2>&1 | tee gradle-build.log
+
+      # Turns compiler errors and failed tests into annotations, readable on the run page.
+      - name: Summarise build errors (on failure)
+        if: failure()
+        run: |
+          cat gradle-*.log 2>/dev/null > all.log || true
+          {
+            grep -E "^e: |error:|FAILED|What went wrong" -A 3 all.log || true
+            grep -E "Exception|expected:<" all.log | head -40 || true
+          } | head -150 > errors.txt
+          if [ -s errors.txt ]; then
+            MSG=$(sed -e 's/%/%25/g' errors.txt | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build errors::${MSG}"
+          fi
+          cat errors.txt
 
       - name: Verify APK exists
         run: |
