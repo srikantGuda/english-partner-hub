@@ -1,0 +1,2 @@
+# Release builds are not minified yet (isMinifyEnabled = false).
+# Add keep rules here if minification is enabled later.
