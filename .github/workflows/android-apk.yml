@@ -35,14 +35,28 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept licences and install SDK packages
+      # GitHub's Ubuntu runners ship an Android SDK. If its command-line tools are missing,
+      # download the official ones from Google. Then accept licences and install what we need.
+      - name: Set up Android SDK, accept licences, install packages
         run: |
-          SDKMANAGER="$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")"
-          yes | "$SDKMANAGER" --licenses > /dev/null
-          "$SDKMANAGER" --install "platform-tools" "$ANDROID_PLATFORM" "$ANDROID_BUILD_TOOLS"
+          set -euo pipefail
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/android-sdk}}"
+          mkdir -p "$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "Command-line tools not found; downloading them."
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            rm -rf /tmp/cmdline-tools && unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+            mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          (yes || true) | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses > /dev/null
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platform-tools" "$ANDROID_PLATFORM" "$ANDROID_BUILD_TOOLS"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       # Validates gradle-wrapper.jar against official checksums and caches Gradle downloads.
       - name: Set up Gradle
